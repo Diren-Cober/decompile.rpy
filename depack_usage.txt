@@ -1,0 +1,10 @@
+# RenPy archive unpacker 1.2
+# Decompiles PRA archives from RenPy runtime.
+# Compatible with games using old versions of RenPy 6.x
+
+# =============
+# HOW TO USE IT
+# =============
+# 1. Put this file to your /game dir.
+# 2. Run the game.
+# 3. See /unpacked dir.

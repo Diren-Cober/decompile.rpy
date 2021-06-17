@@ -1,48 +1,55 @@
 # RenPy archive unpacker 1.2
-# Decompiles PRA archives from RenPy runtime.
-# Compatible with games using old versions of RenPy 6.x
 
-# =============
-# HOW TO USE IT
-# =============
-# 1. Put this file to your /game/ dir.
-# 2. Run the game.
-# 3. See /unpacked/ dir.
+# Modified by DC
+
+
 
 init -9000 python:
+
     import os
     import shutil
-    import __builtin__
 
-    _LB_GAME_DIR = os.path.join(config.basedir, "game")
-    _LB_OUTPUT_DIR = os.path.join(config.basedir, "unpacked", "game")
+    g_open = open
+    os_path = os.path
+    os_makedirs = os.makedirs
+    os_path_join = os_path.join
+    os_path_exists = os_path.exists
+    os_path_dirname = os_path.dirname
+    shutil_copyfileobj = shutil.copyfileobj
 
-    if  hasattr(renpy,"list_files"):
+    _LB_game_dir = os.path.join(config.basedir, "game")
+    _LB_output_dir = os.path.join(config.basedir, "unpacked", "game")
+
+    try:
         _LB_list_files = renpy.list_files
-    else:
+
+    except AttributeError:
         # for RenPy before 6.11.0
-        _LB_list_files = lambda: [fn for dir, fn in renpy.loader.listdirfiles() if dir != renpy.config.commondir]
+        _LB_list_files = lambda: [
+            fn for dn, fn in renpy.loader.listdirfiles() if dn != renpy.config.commondir
+        ]
 
-    # for removing invisible "archived" folder
-    renpy.loader.walkdir = (lambda f: lambda dir: f(dir) if os.path.exists(dir) else [])(renpy.loader.walkdir)
-
-    if  hasattr(renpy,"file"):
+    try:
         _LB_file = renpy.file
-    elif hasattr(renpy,"notl_file"):
-        _LB_file = renpy.notl_file
-    else:
-        # for RenPy before 6.3.0
-        _LB_file = renpy.loader.load
+    except AttributeError:
+        try:
+            _LB_file = renpy.notl_file
+        except AttributeError:
+            # for RenPy before 6.3.0
+            _LB_file = renpy.loader.load
 
-    for fname in _LB_list_files():
-        old_path = os.path.join(_LB_GAME_DIR, fname)
-        new_path = os.path.join(_LB_OUTPUT_DIR, fname)
-        if  not os.path.exists(old_path) and not os.path.exists(new_path):
-            dirname = os.path.dirname(new_path)
-            if  not os.path.exists(dirname):
-                os.makedirs(dirname)
-            new = __builtin__.open(new_path, "wb")
-            orig = _LB_file(fname)
-            shutil.copyfileobj(orig, new)
-            orig.close()
-            new.close()
+    for filename in _LB_list_files():
+
+        if filename[0] not in ('_', '0'):
+            
+            in_path = os_path_join(_LB_game_dir, filename)
+            out_path = os_path_join(_LB_output_dir, filename)
+
+            if  not os_path_exists(in_path) and not os_path_exists(out_path):
+
+                out_dir_name = os_path_dirname(out_path)
+                if  not os_path_exists(out_dir_name):
+                    os_makedirs(out_dir_name)
+            
+                with g_open(out_path, "wb") as dest, _LB_file(filename) as origin:
+                    shutil_copyfileobj(origin, dest)
